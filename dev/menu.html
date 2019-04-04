@@ -8,8 +8,18 @@
       <!-- Include jQuery.mmenu .css files -->
       <link href="path/to/jquery.mmenu.css" rel="stylesheet" />
 
+<script
+    src="https://code.jquery.com/jquery-3.3.1.js"
+    integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+    crossorigin="anonymous">
+</script>
+<script> 
+$(function(){
+  $("#my-menu").load("/sitemap.html"); 
+});
+</script> 
+
       <!-- Include jQuery and the jQuery.mmenu .js files -->
-      <script src="path/to/js/jquery.js"></script>
       <script src="path/to/js/jquery.mmenu.all.js"></script>
 
       <!-- Fire the plugin onDocumentReady -->
@@ -65,6 +75,7 @@
             <li id="my-item"><a href="/about/">About us</a></li>
             <li><a href="/contact/">Contact</a></li>
          </ul>
+            <div id="my-menu"></div>
       </nav>
 
    </body>
