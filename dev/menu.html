@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html>
+   <head>
+      <title>Dynamic content demo</title>
+      <meta charset="utf-8" />
+      <link href="layout.css" rel="stylesheet" />
+
+      <!-- Include jQuery.mmenu .css files -->
+      <link href="/resource/css/jquery.mmenu.css" rel="stylesheet" />
+
+<script
+    src="https://code.jquery.com/jquery-3.3.1.js"
+    integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+    crossorigin="anonymous">
+</script>
+<script> 
+$(function(){
+  $("#my-menu").load("/sitemap.html"); 
+});
+</script> 
+
+      <!-- Include jQuery and the jQuery.mmenu .js files -->
+      <script src="/resource/js/jquery.mmenu.all.js"></script>
+
+      <!-- Fire the plugin onDocumentReady -->
+      <script>
+         $(document).ready(function() {
+            $("#my-menu").mmenu();
+
+            var API = $("#my-menu").data( "mmenu" );
+
+            $("#add_li").click(function() {
+               var li = '<li><a href="/work">Our work</a></li>';
+
+               $("#my-list").find( ".mm-listview" ).append( li );
+               API.initPanels( $("#my-list") );
+
+               return false;
+            });
+            $("#add_ul").click(function() {
+               var ul = '<ul>';
+               ul += '<li><a href="/about/history">History</a></li>';
+               ul += '<li><a href="/about/team">The team</a></li>';
+               ul += '<li><a href="/about/address">Our address</a></li>';
+               ul += '</ul>';
+
+               $("#my-item").append( ul );
+               API.initPanels( $("#my-list") );
+
+               return false;
+            });
+         });
+      </script>
+
+   </head>
+   <body>
+
+      <!-- The page -->
+      <div class="page">
+         <div class="header">
+            <a href="#menu"></a>
+            Demo
+         </div>
+         <div class="content">
+            <p><strong>This is a demo.</strong><br />
+               <a id="add_li" href="#">Add a new menu item</a><br />
+               <a id="add_ul" href="#">Add a new submenu</a></p>
+         </div>
+      </div>
+
+      <!-- The menu -->
+      <nav id="my-menu">
+         <ul id="my-list">
+            <li><a href="/">Home</a></li>
+            <li id="my-item"><a href="/about/">About us</a></li>
+            <li><a href="/contact/">Contact</a></li>
+         </ul>
+            <div id="my-menu"></div>
+      </nav>
+
+   </body>
+</html>

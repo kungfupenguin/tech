@@ -1,0 +1,23 @@
+<html>
+<head>
+<title>dev</title>
+<script
+    src="https://code.jquery.com/jquery-3.3.1.js"
+    integrity="sha256-2Kok7MbOyxpgUVvAk/HJ2jigOSYS2auK4Pfzbm7uH60="
+    crossorigin="anonymous">
+</script>
+<script> 
+$(function(){
+  $("#header").load("/dev/header.html"); 
+  $("#footer").load("/dev/footer.html"); 
+});
+</script> 
+</head>
+<body>
+<div id="header"></div>
+<!--Remaining section-->
+<h1>Main Body</h1>
+<div id="footer"></div>
+<!--#include virtual="/dev/footer.html" -->
+</body>
+</html>
