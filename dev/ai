@@ -1,0 +1,146 @@
+#!/bin/bash
+# arch vm install
+
+pacman -Syy
+
+timedatectl set-ntp true
+
+sgdisk -Z /dev/sda
+
+blkdiscard /dev/sda
+
+wipefs -a /dev/sda
+
+parted -s /dev/sda mklabel gpt
+
+parted -s /dev/sda mkpart primary fat32 1MiB 261MiB
+parted -s /dev/sda set 1 esp on
+parted -s /dev/sda name 1 boot
+
+parted -s /dev/sda mkpart primary ext4 261MiB 100%
+parted -s /dev/sda name 2 root 
+
+parted -s /dev/sda align-check optimal 1
+parted -s /dev/sda align-check optimal 2
+
+parted -s /dev/sda print
+
+mkfs.fat -F32 /dev/sda1
+mkfs.ext4 /dev/sda2
+
+mount /dev/sda2 /mnt
+mkdir /mnt/boot
+mount /dev/sda1 /mnt/boot
+
+pacstrap /mnt base base-devel linux linux-lts linux-headers linux-lts-headers linux-firmware intel-ucode efibootmgr grub vim man-db man-pages texinfo
+
+genfstab -U /mnt >> /mnt/etc/fstab
+
+# Install base system
+arch-chroot /mnt /bin/bash <<EOF
+/usr/bin/reflector --country 'United States' --protocol https --latest 200 --age 24 --sort rate --save /etc/pacman.d/mirrorlist
+
+pacman -Syu
+
+ln -sf /usr/share/zoneinfo/America/Chicago /etc/localtime
+
+hwclock --systohc
+
+echo "en_US.UTF-8 UTF-8" > /etc/locale.gen
+
+locale-gen
+
+echo 'LC_CTYPE="en_US.UTF-8"
+LC_ALL="en_US.UTF-8"
+LANG="en_US.UTF-8"' > /etc/locale.conf
+
+echo "archvm" > /etc/hostname
+
+echo -e "127.0.0.1\t\tlocalhost\n::1\t\tlocalhost\n127.0.1.1\t\tmyhostname.localdomain myhostname\n" > /etc/hosts
+
+echo 'KEYMAP=us' > /etc/vconsole.conf
+
+grub-install --target=x86_64-efi --efi-directory=/boot --bootloader-id=GRUB
+
+grub-mkconfig -o /boot/grub/grub.cfg
+
+systemctl enable reflector.timer
+
+systemctl enable fstrim.timer
+
+systemctl enable NetworkManager.service
+
+mkdir -p /etc/pacman.d/hooks
+
+echo "[Trigger]
+Operation = Upgrade
+Type = Package
+Target = pacman-mirrorlist
+
+[Action]
+Description = Updating pacman-mirrorlist with reflector and removing pacnew...
+When = PostTransaction
+Depends = reflector
+Exec = /bin/sh -c \"reflector --country 'United States' --protocol https --latest 200 --age 24 --sort rate --save /etc/pacman.d/mirrorlist; rm -f /etc/pacman.d/mirrorlist.pacnew\"
+" > /etc/pacman.d/hooks/mirrorupgrade.hook
+
+echo "[Unit]
+Description=Pacman mirrorlist update
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/reflector --country 'United States' --protocol https --latest 200 --age 24 --sort rate --save /etc/pacman.d/mirrorlist
+
+[Install]
+RequiredBy=multi-user.target
+" > /etc/systemd/system/reflector.service
+
+echo '[Unit]
+Description=Run reflector weekly
+
+[Timer]
+OnCalendar=Mon *-*-* 19:00:00
+RandomizedDelaySec=15h
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+' > /etc/systemd/system/reflector.timer
+
+pacman -S --needed --noconfirm xorg xorg-server xorg-xinit xorg-apps xorg-xinput xorg-xprop xorg-xdpyinfo xorg-xrandr xorg-drivers xterm xdotool xclip xsel mesa xf86-video-fbdev xf86-video-vesa xf86-video-intel xf86-input-libinput xf86-input-evdev xf86-input-synaptics xdg-user-dirs xdg-utils alsa-firmware alsa-lib alsa-plugins alsa-utils pavucontrol pulseaudio pulseaudio-alsa 
+
+pacman -S --needed --noconfirm lightdm lightdm-gtk-greeter lightdm-gtk-greeter-settings
+
+pacman -S --needed --noconfirm i3-gaps polybar picom
+
+systemctl enable lightdm.service
+
+touch /etc/skel/.bash_profile
+
+echo 'if systemctl -q is-active graphical.target && [[ ! $DISPLAY && $XDG_VTNR -eq 1 ]]; then
+  exec startx
+fi
+' >> /etc/skel/.bash_profile
+
+cp /etc/X11/xinit/xinitrc /etc/skel/.xinitrc
+
+echo '%wheel ALL=(ALL) NOPASSWD: ALL' > /etc/sudoers.d/wheel
+
+echo 'exec i3' > /etc/skel/.xsession
+chmod +x /etc/skel/.xsession
+
+echo '[[ $- != *i* ]] && return' > /etc/skel/.bashrc
+echo '[[ -f ${HOME}/.bash_profile ]] && source ${HOME}/.bash_profile' > /etc/skel/.bashrc
+
+echo 'export XDG_CONFIG_HOME="${HOME}"/.config' > /etc/skel/.bash_profile
+echo 'PS1="[\u@\h \W]\$ "' > /etc/skel/.bash_profile
+echo '[[ -r /usr/share/bash-completion/bash_completion ]] && source /usr/share/bash-completion/bash_completion' > /etc/skel/.bash_profile
+echo '[[ -d ${HOME}/bin ]] && export PATH="${PATH}:${HOME}/bin"' > /etc/skel/.bash_profile
+echo '[[ -d ${HOME}/scripts ]] && export PATH="${PATH}:${HOME}/scripts"' > /etc/skel/.bash_profile
+
+passwd
+
+EOF
+
